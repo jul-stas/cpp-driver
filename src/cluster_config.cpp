@@ -40,6 +40,7 @@ void cass_cluster_set_ssl(CassCluster* cluster, CassSsl* ssl) {
   if (cluster->config().cloud_secure_connection_config().is_loaded()) {
     LOG_ERROR("SSL context cannot be overridden with cloud secure connection bundle");
   } else {
+    LOG_INFO("setting SSL");
     cluster->config().set_ssl_context(ssl->from());
   }
 }
@@ -65,6 +66,7 @@ CassError cass_cluster_set_protocol_version(CassCluster* cluster, int protocol_v
                 ProtocolVersion::highest_supported(version.is_dse()).to_string().c_str());
       return CASS_ERROR_LIB_BAD_PARAMS;
     }
+    LOG_INFO("protocol_version = %d", protocol_version);
     cluster->config().set_protocol_version(version);
     return CASS_OK;
   }
@@ -97,6 +99,7 @@ CassError cass_cluster_set_num_threads_io(CassCluster* cluster, unsigned num_thr
   if (num_threads == 0) {
     return CASS_ERROR_LIB_BAD_PARAMS;
   }
+  LOG_INFO("num_threads = %u", num_threads);
   cluster->config().set_thread_count_io(num_threads);
   return CASS_OK;
 }
@@ -124,7 +127,9 @@ CassError cass_cluster_set_contact_points_n(CassCluster* cluster, const char* co
     return CASS_ERROR_LIB_BAD_PARAMS;
   }
 
+  LOG_INFO("contact_points = %.*s", (int)contact_points_length, contact_points);
   if (contact_points_length == 0) {
+    LOG_INFO("clearing contact_points");
     cluster->config().contact_points().clear();
   } else {
     Vector<String> exploded;
@@ -142,6 +147,7 @@ CassError cass_cluster_set_core_connections_per_host(CassCluster* cluster,
   if (num_connections == 0) {
     return CASS_ERROR_LIB_BAD_PARAMS;
   }
+  LOG_INFO("num_connections = %u", num_connections);
   cluster->config().set_core_connections_per_host(num_connections);
   return CASS_OK;
 }
@@ -275,6 +281,7 @@ void cass_cluster_set_credentials_n(CassCluster* cluster, const char* username,
 }
 
 void cass_cluster_set_load_balance_round_robin(CassCluster* cluster) {
+  LOG_INFO("setting RR LB");
   cluster->config().set_load_balancing_policy(new RoundRobinPolicy());
 }
 
@@ -296,27 +303,32 @@ CassError cass_cluster_set_load_balance_dc_aware_n(CassCluster* cluster, const c
   if (local_dc == NULL || local_dc_length == 0) {
     return CASS_ERROR_LIB_BAD_PARAMS;
   }
+  LOG_INFO("local_dc = %.*s, used_hosts_per_remote_dc = %u, allow_remote_dcs_for_local_cl = %d", (int)local_dc_length, local_dc, used_hosts_per_remote_dc, allow_remote_dcs_for_local_cl);
   cluster->config().set_load_balancing_policy(new DCAwarePolicy(
       String(local_dc, local_dc_length), used_hosts_per_remote_dc, !allow_remote_dcs_for_local_cl));
   return CASS_OK;
 }
 
 void cass_cluster_set_token_aware_routing(CassCluster* cluster, cass_bool_t enabled) {
+  LOG_INFO("setting TokenAware LB");
   cluster->config().set_token_aware_routing(enabled == cass_true);
 }
 
 void cass_cluster_set_token_aware_routing_shuffle_replicas(CassCluster* cluster,
                                                            cass_bool_t enabled) {
+  LOG_INFO("setting TokenAware LB w/ shuffling enabled = %d", enabled);
   cluster->config().set_token_aware_routing_shuffle_replicas(enabled == cass_true);
 }
 
 void cass_cluster_set_latency_aware_routing(CassCluster* cluster, cass_bool_t enabled) {
+  LOG_INFO("setting LatencyAware LB");
   cluster->config().set_latency_aware_routing(enabled == cass_true);
 }
 
 void cass_cluster_set_latency_aware_routing_settings(
     CassCluster* cluster, cass_double_t exclusion_threshold, cass_uint64_t scale_ms,
     cass_uint64_t retry_period_ms, cass_uint64_t update_rate_ms, cass_uint64_t min_measured) {
+  LOG_INFO("setting LatencyAware LB with params");
   LatencyAwarePolicy::Settings settings;
   settings.exclusion_threshold = exclusion_threshold;
   settings.scale_ns = scale_ms * 1000 * 1000;
@@ -333,8 +345,10 @@ void cass_cluster_set_whitelist_filtering(CassCluster* cluster, const char* host
 void cass_cluster_set_whitelist_filtering_n(CassCluster* cluster, const char* hosts,
                                             size_t hosts_length) {
   if (hosts_length == 0) {
+    LOG_INFO("clearing whitelist");
     cluster->config().default_profile().whitelist().clear();
   } else {
+    LOG_INFO("hosts = %.*s", (int)hosts_length, hosts);
     explode(String(hosts, hosts_length), cluster->config().default_profile().whitelist());
   }
 }
@@ -346,8 +360,10 @@ void cass_cluster_set_blacklist_filtering(CassCluster* cluster, const char* host
 void cass_cluster_set_blacklist_filtering_n(CassCluster* cluster, const char* hosts,
                                             size_t hosts_length) {
   if (hosts_length == 0) {
+    LOG_INFO("clearing B-list");
     cluster->config().default_profile().blacklist().clear();
   } else {
+    LOG_INFO("hosts = %.*s", (int)hosts_length, hosts);
     explode(String(hosts, hosts_length), cluster->config().default_profile().blacklist());
   }
 }
@@ -359,8 +375,10 @@ void cass_cluster_set_whitelist_dc_filtering(CassCluster* cluster, const char* d
 void cass_cluster_set_whitelist_dc_filtering_n(CassCluster* cluster, const char* dcs,
                                                size_t dcs_length) {
   if (dcs_length == 0) {
+    LOG_INFO("clearing whitelist");
     cluster->config().default_profile().whitelist_dc().clear();
   } else {
+    LOG_INFO("dcs = %.*s", (int)dcs_length, dcs);
     explode(String(dcs, dcs_length), cluster->config().default_profile().whitelist_dc());
   }
 }
@@ -372,18 +390,22 @@ void cass_cluster_set_blacklist_dc_filtering(CassCluster* cluster, const char* d
 void cass_cluster_set_blacklist_dc_filtering_n(CassCluster* cluster, const char* dcs,
                                                size_t dcs_length) {
   if (dcs_length == 0) {
+    LOG_INFO("clearing B-list");
     cluster->config().default_profile().blacklist_dc().clear();
   } else {
+    LOG_INFO("dcs = %.*s", (int)dcs_length, dcs);
     explode(String(dcs, dcs_length), cluster->config().default_profile().blacklist_dc());
   }
 }
 
 void cass_cluster_set_tcp_nodelay(CassCluster* cluster, cass_bool_t enabled) {
+  LOG_INFO("TCP nodelay");
   cluster->config().set_tcp_nodelay(enabled == cass_true);
 }
 
 void cass_cluster_set_tcp_keepalive(CassCluster* cluster, cass_bool_t enabled,
                                     unsigned delay_secs) {
+  LOG_INFO("TCP keepalive");
   cluster->config().set_tcp_keepalive(enabled == cass_true, delay_secs);
 }
 
@@ -396,10 +418,12 @@ CassError cass_cluster_set_authenticator_callbacks(
 }
 
 void cass_cluster_set_connection_heartbeat_interval(CassCluster* cluster, unsigned interval_secs) {
+  LOG_INFO("interval_secs = %u", interval_secs);
   cluster->config().set_connection_heartbeat_interval_secs(interval_secs);
 }
 
 void cass_cluster_set_connection_idle_timeout(CassCluster* cluster, unsigned timeout_secs) {
+  LOG_INFO("timeout_secs = %u", timeout_secs);
   cluster->config().set_connection_idle_timeout_secs(timeout_secs);
 }
 
@@ -416,12 +440,14 @@ void cass_cluster_set_use_schema(CassCluster* cluster, cass_bool_t enabled) {
 }
 
 CassError cass_cluster_set_use_hostname_resolution(CassCluster* cluster, cass_bool_t enabled) {
+  LOG_INFO("enabled = %d", enabled);
   cluster->config().set_use_hostname_resolution(enabled == cass_true);
   return CASS_OK;
 }
 
 CassError cass_cluster_set_use_randomized_contact_points(CassCluster* cluster,
                                                          cass_bool_t enabled) {
+  LOG_INFO("enabled = %d", enabled);
   cluster->config().set_use_randomized_contact_points(enabled == cass_true);
   return CASS_OK;
 }
@@ -478,8 +504,10 @@ CassError cass_cluster_set_local_address(CassCluster* cluster, const char* name)
 CassError cass_cluster_set_local_address_n(CassCluster* cluster, const char* name,
                                            size_t name_length) {
   if (name_length == 0 || name == NULL) {
+    LOG_INFO("clearing local adress");
     cluster->config().set_local_address(Address());
   } else {
+    LOG_INFO("name = %.*s", (int)name_length, name);
     Address address(String(name, name_length), 0);
     if (address.is_valid_and_resolved()) {
       cluster->config().set_local_address(address);
@@ -491,6 +519,7 @@ CassError cass_cluster_set_local_address_n(CassCluster* cluster, const char* nam
 }
 
 CassError cass_cluster_set_local_port_range(CassCluster* cluster, int lo, int hi) {
+  LOG_INFO("lo = %d, hi = %d", lo, hi);
   if (hi < lo || lo < 1024 || hi > 65536) {
     LOG_ERROR("Invalid local port range. Expected: 1024 < lo <= hi < 65536.");
     return CASS_ERROR_LIB_BAD_PARAMS;

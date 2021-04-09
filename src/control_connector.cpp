@@ -96,6 +96,7 @@ ControlConnector* ControlConnector::with_settings(const ControlConnectionSetting
 }
 
 void ControlConnector::connect(uv_loop_t* loop) {
+  LOG_INFO("Connecting control conn to %s from control connector %p", address().to_string().c_str(), (void*)this);
   inc_ref();
   int event_types = 0;
   if (settings_.use_schema || settings_.use_token_aware_routing) {
@@ -110,6 +111,7 @@ void ControlConnector::connect(uv_loop_t* loop) {
 }
 
 void ControlConnector::cancel() {
+  LOG_INFO("Cancelling control conn to %s from control connector %p", address().to_string().c_str(), (void*)this);
   error_code_ = CONTROL_CONNECTION_CANCELED;
   connector_->cancel();
   if (connection_) connection_->close();
@@ -170,6 +172,7 @@ void ControlConnector::on_error(ControlConnector::ControlConnectionError code,
 }
 
 void ControlConnector::on_connect(Connector* connector) {
+  LOG_INFO("Connected control conn to %s from control connector %p", connector->address().to_string().c_str(), (void*)this);
   if (!is_canceled() && connector->is_ok()) {
     connection_ = connector->release_connection();
 

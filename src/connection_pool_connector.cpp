@@ -68,6 +68,7 @@ void ConnectionPoolConnector::connect_with_scout(uv_loop_t* loop) {
   scout_connector_ = Connector::Ptr{new Connector(
       host_, protocol_version_, bind_callback(&ConnectionPoolConnector::on_scout_connect, this))};
 
+  LOG_INFO("Connecting scout to %s from pool connector %p", host_->address_string().c_str(), (void*)this);
   scout_connector_->with_metrics(metrics_)
       ->with_settings(settings_.connection_settings)
       ->connect(loop);
@@ -129,6 +130,7 @@ void ConnectionPoolConnector::connect() {
       connector->set_desired_shard_num(i % si->get_shards_count());
     }
 
+    LOG_INFO("Connecting pooled conn to %s from pool connector %p", host_->address_string().c_str(), (void*)this);
     connector->with_keyspace(keyspace_)
         ->with_metrics(metrics_)
         ->with_settings(settings_.connection_settings)
@@ -138,6 +140,7 @@ void ConnectionPoolConnector::connect() {
 }
 
 void ConnectionPoolConnector::on_connect(Connector* connector) {
+  LOG_INFO("Connected pooled conn to %s from pool connector %p", connector->address().to_string().c_str(), (void*)this);
   pending_connections_.erase(
       std::remove(pending_connections_.begin(), pending_connections_.end(), connector),
       pending_connections_.end());
@@ -186,6 +189,7 @@ void ConnectionPoolConnector::on_connect(Connector* connector) {
 }
 
 void ConnectionPoolConnector::on_scout_connect(Connector* connector) {
+  LOG_INFO("Connected scout to %s from pool connector %p", connector->address().to_string().c_str(), (void*)this);
   scout_connector_->cancel();
   connect();
   dec_ref();

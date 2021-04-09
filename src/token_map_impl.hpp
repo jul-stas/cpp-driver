@@ -211,6 +211,7 @@ inline void build_datacenters(const HostSet& hosts, DatacenterMap& result) {
   for (HostSet::const_iterator i = hosts.begin(), end = hosts.end(); i != end; ++i) {
     uint32_t dc = (*i)->dc_id();
     uint32_t rack = (*i)->rack_id();
+    LOG_INFO("building DCs: host %s in dc = %u, rack = %u", (*i)->address().to_string().c_str(), dc, rack);
     if (dc != 0 && rack != 0) {
       Datacenter& datacenter = result[dc];
       datacenter.racks.insert(rack);
@@ -846,7 +847,7 @@ void TokenMapImpl<Partitioner>::build_replicas() {
     const String& keyspace_name = i->first;
     const ReplicationStrategy<Partitioner>& strategy = i->second;
     strategy.build_replicas(tokens_, datacenters_, replicas_[keyspace_name]);
-    LOG_TRACE("Replicas for keyspace '%s':\n%s", keyspace_name.c_str(),
+    LOG_INFO("Replicas for keyspace '%s':\n%s", keyspace_name.c_str(),
               dump(keyspace_name).c_str());
   }
 }

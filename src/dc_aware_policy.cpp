@@ -105,8 +105,10 @@ void DCAwarePolicy::on_host_added(const Host::Ptr& host) {
   }
 
   if (dc == local_dc_) {
+    LOG_INFO("Adding host %s to local DC", host->address_string().c_str());
     add_host(local_dc_live_hosts_, host);
   } else {
+    LOG_INFO("Adding host %s to DC %s", host->address_string().c_str(), dc.c_str());
     per_remote_dc_live_hosts_.add_host_to_dc(dc, host);
   }
 }
@@ -114,8 +116,10 @@ void DCAwarePolicy::on_host_added(const Host::Ptr& host) {
 void DCAwarePolicy::on_host_removed(const Host::Ptr& host) {
   const String& dc = host->dc();
   if (dc == local_dc_) {
+    LOG_INFO("Removing host %s from local DC", host->address_string().c_str());
     remove_host(local_dc_live_hosts_, host);
   } else {
+    LOG_INFO("Removing host %s from DC %s", host->address_string().c_str(), dc.c_str());
     per_remote_dc_live_hosts_.remove_host_from_dc(host->dc(), host);
   }
 
